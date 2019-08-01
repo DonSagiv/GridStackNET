@@ -1,7 +1,7 @@
 # GridStackNET
  A layout manager inspired by GRIDSTACK.JS (http://gridstackjs.com/ for more information). Credit goes to Pavel Reznikov for inspriation. Uses .NET 4.6.1 using C# 6. Forking and modifying encouraged.
  
-![GridStackNET image](https://raw.githubusercontent.com/DonSagiv/GridStackNET/master/Screenshots/Screenshot1.png)
+![GridStackNET image](https://raw.githubusercontent.com/DonSagiv/GridStackNET/master/Screenshots/Animation.gif)
 
 ## How to use GridStackNET in your WPF project
 
