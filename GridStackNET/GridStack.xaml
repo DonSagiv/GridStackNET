@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="GridStackNET.GridStack"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <Grid x:Name="parentGrid">
+
+            <Border x:Name="traceBorder" Grid.Row="0" Grid.Column="0" BorderBrush="DodgerBlue"/>
+
+        </Grid>
+
+    </ScrollViewer>
+
+</UserControl>

@@ -1,0 +1,22 @@
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:gridStackNet="clr-namespace:GridStackNET"
+        x:Class="GridStackNET.MainWindow"
+        Title="MainWindow" Height="800" Width="1000">
+
+    <DockPanel>
+
+        <Button DockPanel.Dock="Top" Content="Add Item" Command="{Binding addItemCommand}"/>
+
+        <gridStackNet:GridStack Margin="5" x:Name="gridStack"
+                         NumColumns="12"
+                         MinRows="8"
+                         MinRowHeight="50"
+                         ItemMargin="3"
+                         DefaultColumnSpan="3"
+                         DefaultRowSpan="1"
+                         Children="{Binding gridElements}"/>
+
+    </DockPanel>
+
+</Window>
