@@ -9,13 +9,14 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using GridStackNET.Utilities;
 
 namespace GridStackNET
 {
     public partial class GridStack : UserControl
     {
-        #region Dependency Propertie
+        #region Dependency Properties
         public static readonly DependencyProperty NumColumnsProperty = DependencyProperty.Register("NumColumns",
             typeof(int),
             typeof(UserControl),
@@ -54,6 +55,7 @@ namespace GridStackNET
 
         #region Fields
         private bool _isDragging;
+        private bool _isInitialized;
         #endregion
 
         #region Properties
@@ -133,6 +135,8 @@ namespace GridStackNET
         #region Misc Methods
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            if (_isInitialized) return;
+
             // children = new ObservableCollection<UIElement>();
             Children.CollectionChanged += onChildrenChanged;
 
@@ -148,6 +152,8 @@ namespace GridStackNET
                 ItemMargin.Bottom < 3 ? 3 : ItemMargin.Bottom);
 
             traceBorder.BorderThickness = borderThickness;
+
+            _isInitialized = true;
         }
         #endregion
 
@@ -268,11 +274,14 @@ namespace GridStackNET
             {
                 var rowDefinition = new RowDefinition
                 {
+                    Height = new GridLength(1, GridUnitType.Star),
                     MinHeight = MinRowHeight,
-                    Height = new GridLength(1, GridUnitType.Star)
                 };
+
                 parentGrid.RowDefinitions.Add(rowDefinition);
             }
+
+            Dispatcher?.Invoke(() => { }, DispatcherPriority.Render);
         }
 
         private void removeRowDefinitions(int rowsToRemove)
@@ -301,6 +310,8 @@ namespace GridStackNET
         /// </summary>
         private void clearEmptyRowDefinitions()
         {
+            if (!getPanelGridSpaces().Any()) return;
+
             var maxRow = getPanelGridSpaces().Max(x => x.bottomRow);
             var totalRowDefinitions = parentGrid.RowDefinitions.Count;
             var rowsToRemove = totalRowDefinitions - maxRow - 1;
@@ -319,14 +330,8 @@ namespace GridStackNET
                     autoAddGridItem(DefaultColumnSpan, DefaultRowSpan, elementToAdd);
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    var elementToRemove = e.NewItems[0] as UIElement;
-
-                    var borders = parentGrid.Children
-                        .OfType<Border>()
-                        .Where(x => x.Child == elementToRemove);
-
-                    foreach (var border in borders)
-                        parentGrid.Children.Remove(border);
+                    var elementToRemove = e.OldItems[0] as UIElement;
+                    removeGridItem(elementToRemove);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                 case NotifyCollectionChangedAction.Move:
@@ -343,7 +348,7 @@ namespace GridStackNET
             {
                 Margin = ItemMargin,
                 BorderBrush = Brushes.Black,
-                BorderThickness = new Thickness(2),
+                BorderThickness = new Thickness(0),
                 Background = Brushes.Transparent,
                 Child = content
             };
@@ -358,6 +363,21 @@ namespace GridStackNET
             parentGrid.Children.Add(borderToAdd);
 
             autoAddRowDefinitions();
+            adjustGridStackItemHeight();
+        }
+
+        private void removeGridItem(UIElement elementToRemove)
+        {
+            var borders = parentGrid.Children
+                .OfType<Border>()
+                .Where(x => x.Child == elementToRemove)
+                .ToList();
+
+            foreach (var border in borders)
+                parentGrid.Children.Remove(border);
+
+            clearEmptyRowDefinitions();
+            adjustGridStackItemHeight();
         }
 
         /// <summary>
@@ -400,6 +420,23 @@ namespace GridStackNET
                 .OfType<Border>()
                 .Where(x => x != traceBorder)
                 .Select(x => new ElementGridSpace(x));
+        }
+
+        private void adjustGridStackItemHeight()
+        {
+            var gridHeight = parentGrid.ActualHeight;
+            var rowDefinitions = parentGrid.RowDefinitions.Count;
+
+            var borders = getPanelGridSpaces()
+                .Select(x => x.element)
+                .OfType<Border>()
+                .ToList();
+
+            foreach (var border in borders)
+            {
+                var rowSpan = Grid.GetRowSpan(border);
+                border.MaxHeight = gridHeight / rowDefinitions * rowSpan - ItemMargin.Top - ItemMargin.Bottom;
+            }
         }
         #endregion
 
@@ -620,6 +657,7 @@ namespace GridStackNET
 
             autoAddRowDefinitions();
             clearEmptyRowDefinitions();
+            adjustGridStackItemHeight();
         }
         #endregion
 

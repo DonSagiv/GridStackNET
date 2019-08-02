@@ -30,3 +30,13 @@
 * **Children**: The children elements inside the gridstack. Each child must be of type **System.Windows.UIElement** and the Children object itself must be **ObservableCollection\<UIElement\>**. This property can also be binded to a view model object.
 
 This code has an MIT license.
+
+# Changelog
+
+## Version 0.0.0.2
+
+- Prevent re-sizing of rows when content is larger than row definition's actual height.
+
+## Version 0.0.0.1
+
+- Initial Release

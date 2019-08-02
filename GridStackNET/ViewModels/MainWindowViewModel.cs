@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace GridStackNET.ViewModels
 {
@@ -42,15 +43,21 @@ namespace GridStackNET.ViewModels
         #region Methods
         public void addItem()
         {
-            var textblock = new TextBlock
+            var border = new Border
             {
-                Text = $"This is box {++_number}",
-                FontSize = 16,
-                TextAlignment = TextAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(2),
+                Background = Brushes.Transparent,
+                Child = new TextBlock
+                {
+                    Text = $"This is box {++_number}",
+                    FontSize = 16,
+                    TextAlignment = TextAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
             };
 
-            gridElements.Add(textblock);
+            gridElements.Add(border);
         }
 
         public void raisePropertyChanged(string propertyName)
