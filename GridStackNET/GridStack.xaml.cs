@@ -37,8 +37,7 @@ namespace GridStackNET
             typeof(UserControl),
             new FrameworkPropertyMetadata(new Thickness(5)));
 
-        public static readonly DependencyProperty DefaultColumnSpanProperty = DependencyProperty.Register(
-            "DefaultColumnSpan",
+        public static readonly DependencyProperty DefaultColumnSpanProperty = DependencyProperty.Register("DefaultColumnSpan",
             typeof(int),
             typeof(UserControl),
             new FrameworkPropertyMetadata(2));
@@ -53,8 +52,7 @@ namespace GridStackNET
             typeof(UserControl),
             new FrameworkPropertyMetadata(new ObservableCollection<UIElement>()));
 
-        public static readonly DependencyProperty AutoAssignGridSpaceProperty = DependencyProperty.Register(
-            "AutoAssignGridSpace",
+        public static readonly DependencyProperty AutoAssignGridSpaceProperty = DependencyProperty.Register("AutoAssignGridSpace",
             typeof(bool),
             typeof(UserControl),
             new FrameworkPropertyMetadata(true));
@@ -71,7 +69,7 @@ namespace GridStackNET
         /// </summary>
         public ObservableCollection<UIElement> Children
         {
-            get { return (ObservableCollection<UIElement>) GetValue(ChildrenProperty); }
+            get { return (ObservableCollection<UIElement>)GetValue(ChildrenProperty); }
             set { SetValue(ChildrenProperty, value); }
         }
 
@@ -80,7 +78,7 @@ namespace GridStackNET
         /// </summary>
         public int NumColumns
         {
-            get { return (int) GetValue(NumColumnsProperty); }
+            get { return (int)GetValue(NumColumnsProperty); }
             set { SetValue(NumColumnsProperty, value); }
         }
 
@@ -89,7 +87,7 @@ namespace GridStackNET
         /// </summary>
         public int MinRows
         {
-            get { return (int) GetValue(MinRowsProperty); }
+            get { return (int)GetValue(MinRowsProperty); }
             set { SetValue(MinRowsProperty, value); }
         }
 
@@ -98,7 +96,7 @@ namespace GridStackNET
         /// </summary>
         public double MinRowHeight
         {
-            get { return (double) GetValue(MinRowHeightProperty); }
+            get { return (double)GetValue(MinRowHeightProperty); }
             set { SetValue(MinRowHeightProperty, value); }
         }
 
@@ -107,7 +105,7 @@ namespace GridStackNET
         /// </summary>
         public int DefaultColumnSpan
         {
-            get { return (int) GetValue(DefaultColumnSpanProperty); }
+            get { return (int)GetValue(DefaultColumnSpanProperty); }
             set { SetValue(DefaultColumnSpanProperty, value); }
         }
 
@@ -116,7 +114,7 @@ namespace GridStackNET
         /// </summary>
         public int DefaultRowSpan
         {
-            get { return (int) GetValue(DefaultRowSpanProperty); }
+            get { return (int)GetValue(DefaultRowSpanProperty); }
             set { SetValue(DefaultRowSpanProperty, value); }
         }
 
@@ -125,7 +123,7 @@ namespace GridStackNET
         /// </summary>
         public Thickness ItemMargin
         {
-            get { return (Thickness) GetValue(ItemMarginProperty); }
+            get { return (Thickness)GetValue(ItemMarginProperty); }
             set { SetValue(ItemMarginProperty, value); }
         }
 
@@ -137,7 +135,7 @@ namespace GridStackNET
         /// </summary>
         public bool AutoAssignGridSpace
         {
-            get { return (bool) GetValue(AutoAssignGridSpaceProperty); }
+            get { return (bool)GetValue(AutoAssignGridSpaceProperty); }
             set { SetValue(AutoAssignGridSpaceProperty, value); }
         }
         #endregion
@@ -225,8 +223,8 @@ namespace GridStackNET
 
             // Limits the cell movement to the available column/row definition in the grids.
             // Prevents cells from moving out of bounds of the grid.
-            return newCellDimensionValue > numberOfDefinitions - cellSpan
-                ? numberOfDefinitions - cellSpan
+            return newCellDimensionValue > numberOfDefinitions - cellSpan ?
+                numberOfDefinitions - cellSpan
                 : newCellDimensionValue;
         }
 
@@ -444,12 +442,18 @@ namespace GridStackNET
                 rowSpan = Grid.GetRowSpan(content);
             }
 
+            // Ensures the column span does not exceed the number of columns
+            if (columnSpan > parentGrid.ColumnDefinitions.Count)
+                columnSpan = parentGrid.ColumnDefinitions.Count;
+
             var j = row;
 
             while (true)
             {
-                for (var i = column; i < parentGrid.ColumnDefinitions.Count; i++)
+                for (var i = 0; i < parentGrid.ColumnDefinitions.Count; i++)
                 {
+                    if (j == row && i < column) i = column;
+
                     var element = new ElementGridSpace(i, j, columnSpan, rowSpan);
 
                     if (findOverlayingElements(element).Any())
@@ -737,8 +741,7 @@ namespace GridStackNET
                 moveOverlaidElementsDown(overlayingElement.element, newRow, originalElement);
         }
 
-        public void moveOverlaidElementsDown(UIElement overlayElementInput, int newRow,
-            params UIElement[] dontMoveElements)
+        public void moveOverlaidElementsDown(UIElement overlayElementInput, int newRow, params UIElement[] dontMoveElements)
         {
             // Sets the new row of the overlayElementInput
             Grid.SetRow(overlayElementInput, newRow);

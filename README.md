@@ -34,6 +34,10 @@ This code has an MIT license.
 
 # Changelog
 
+## Version 0.0.0.4
+
+- Bug Fix: infinite loop, errors when adding grid items that have a larger column span than the number of columns.
+
 ## Version 0.0.0.3
 
 - Add "AutoAssignGridSpace" dependency property with avoids defaulting any elements to the DefaultColumnSpan and DefaultRowSpan dependency properties.
