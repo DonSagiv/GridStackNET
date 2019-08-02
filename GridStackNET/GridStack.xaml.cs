@@ -37,7 +37,8 @@ namespace GridStackNET
             typeof(UserControl),
             new FrameworkPropertyMetadata(new Thickness(5)));
 
-        public static readonly DependencyProperty DefaultColumnSpanProperty = DependencyProperty.Register("DefaultColumnSpan",
+        public static readonly DependencyProperty DefaultColumnSpanProperty = DependencyProperty.Register(
+            "DefaultColumnSpan",
             typeof(int),
             typeof(UserControl),
             new FrameworkPropertyMetadata(2));
@@ -51,6 +52,12 @@ namespace GridStackNET
             typeof(ObservableCollection<UIElement>),
             typeof(UserControl),
             new FrameworkPropertyMetadata(new ObservableCollection<UIElement>()));
+
+        public static readonly DependencyProperty AutoAssignGridSpaceProperty = DependencyProperty.Register(
+            "AutoAssignGridSpace",
+            typeof(bool),
+            typeof(UserControl),
+            new FrameworkPropertyMetadata(true));
         #endregion
 
         #region Fields
@@ -64,7 +71,7 @@ namespace GridStackNET
         /// </summary>
         public ObservableCollection<UIElement> Children
         {
-            get { return (ObservableCollection<UIElement>)GetValue(ChildrenProperty); }
+            get { return (ObservableCollection<UIElement>) GetValue(ChildrenProperty); }
             set { SetValue(ChildrenProperty, value); }
         }
 
@@ -73,7 +80,7 @@ namespace GridStackNET
         /// </summary>
         public int NumColumns
         {
-            get { return (int)GetValue(NumColumnsProperty); }
+            get { return (int) GetValue(NumColumnsProperty); }
             set { SetValue(NumColumnsProperty, value); }
         }
 
@@ -82,7 +89,7 @@ namespace GridStackNET
         /// </summary>
         public int MinRows
         {
-            get { return (int)GetValue(MinRowsProperty); }
+            get { return (int) GetValue(MinRowsProperty); }
             set { SetValue(MinRowsProperty, value); }
         }
 
@@ -91,7 +98,7 @@ namespace GridStackNET
         /// </summary>
         public double MinRowHeight
         {
-            get { return (double)GetValue(MinRowHeightProperty); }
+            get { return (double) GetValue(MinRowHeightProperty); }
             set { SetValue(MinRowHeightProperty, value); }
         }
 
@@ -100,7 +107,7 @@ namespace GridStackNET
         /// </summary>
         public int DefaultColumnSpan
         {
-            get { return (int)GetValue(DefaultColumnSpanProperty); }
+            get { return (int) GetValue(DefaultColumnSpanProperty); }
             set { SetValue(DefaultColumnSpanProperty, value); }
         }
 
@@ -109,7 +116,7 @@ namespace GridStackNET
         /// </summary>
         public int DefaultRowSpan
         {
-            get { return (int)GetValue(DefaultRowSpanProperty); }
+            get { return (int) GetValue(DefaultRowSpanProperty); }
             set { SetValue(DefaultRowSpanProperty, value); }
         }
 
@@ -118,8 +125,20 @@ namespace GridStackNET
         /// </summary>
         public Thickness ItemMargin
         {
-            get { return (Thickness)GetValue(ItemMarginProperty); }
+            get { return (Thickness) GetValue(ItemMarginProperty); }
             set { SetValue(ItemMarginProperty, value); }
+        }
+
+        /// <summary>
+        /// If true, GridStack will use default column and row spans when adding a new item,
+        /// and automatically assign its row and column.
+        ///
+        /// If false, the element's Grid attached properties must be pre-defined.
+        /// </summary>
+        public bool AutoAssignGridSpace
+        {
+            get { return (bool) GetValue(AutoAssignGridSpaceProperty); }
+            set { SetValue(AutoAssignGridSpaceProperty, value); }
         }
         #endregion
 
@@ -152,6 +171,8 @@ namespace GridStackNET
                 ItemMargin.Bottom < 3 ? 3 : ItemMargin.Bottom);
 
             traceBorder.BorderThickness = borderThickness;
+
+            parentGrid.SizeChanged += onGridSizeChanged;
 
             _isInitialized = true;
         }
@@ -204,8 +225,8 @@ namespace GridStackNET
 
             // Limits the cell movement to the available column/row definition in the grids.
             // Prevents cells from moving out of bounds of the grid.
-            return newCellDimensionValue > numberOfDefinitions - cellSpan ?
-                numberOfDefinitions - cellSpan
+            return newCellDimensionValue > numberOfDefinitions - cellSpan
+                ? numberOfDefinitions - cellSpan
                 : newCellDimensionValue;
         }
 
@@ -318,6 +339,11 @@ namespace GridStackNET
 
             removeRowDefinitions(rowsToRemove);
         }
+
+        private void onGridSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            adjustGridStackItemHeight();
+        }
         #endregion
 
         #region Grid Item Management
@@ -327,7 +353,7 @@ namespace GridStackNET
             {
                 case NotifyCollectionChangedAction.Add:
                     var elementToAdd = e.NewItems[0] as UIElement;
-                    autoAddGridItem(DefaultColumnSpan, DefaultRowSpan, elementToAdd);
+                    autoAddGridItem(elementToAdd, DefaultColumnSpan, DefaultRowSpan);
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     var elementToRemove = e.OldItems[0] as UIElement;
@@ -336,13 +362,14 @@ namespace GridStackNET
                 case NotifyCollectionChangedAction.Replace:
                 case NotifyCollectionChangedAction.Move:
                 case NotifyCollectionChangedAction.Reset:
+                    removeAllGridItems();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public void addGridItem(int column, int row, int colSpan, int rowSpan, UIElement content)
+        public void addGridItem(UIElement content, int column, int row, int colSpan, int rowSpan)
         {
             var borderToAdd = new Border
             {
@@ -380,20 +407,50 @@ namespace GridStackNET
             adjustGridStackItemHeight();
         }
 
+        private void removeAllGridItems()
+        {
+            var bordersToRemove = getPanelGridSpaces()
+                .Where(x => x.element != traceBorder)
+                .ToList();
+
+            foreach (var borderGridSpace in bordersToRemove)
+                parentGrid.Children.Remove(borderGridSpace.element);
+
+            clearEmptyRowDefinitions();
+            adjustGridStackItemHeight();
+        }
+
         /// <summary>
         /// Finds an empty spot on the grid to place new grid item.
         /// </summary>
-        /// <param name="colSpan">Column span of new item</param>
-        /// <param name="rowSpan">Row span of new item</param>
-        private void autoAddGridItem(int colSpan, int rowSpan, UIElement content)
+        /// <param name="defaultColSpan">Column span of new item</param>
+        /// <param name="defaultRowSpan">Row span of new item</param>
+        private void autoAddGridItem(UIElement content, int defaultColSpan, int defaultRowSpan)
         {
-            var j = 0;
+            int column, row, columnSpan, rowSpan;
+
+            if (AutoAssignGridSpace)
+            {
+                column = 0;
+                row = 0;
+                columnSpan = defaultColSpan;
+                rowSpan = defaultRowSpan;
+            }
+            else
+            {
+                column = Grid.GetColumn(content);
+                row = Grid.GetRow(content);
+                columnSpan = Grid.GetColumnSpan(content);
+                rowSpan = Grid.GetRowSpan(content);
+            }
+
+            var j = row;
 
             while (true)
             {
-                for (var i = 0; i < parentGrid.ColumnDefinitions.Count; i++)
+                for (var i = column; i < parentGrid.ColumnDefinitions.Count; i++)
                 {
-                    var element = new ElementGridSpace(i, j, colSpan, rowSpan);
+                    var element = new ElementGridSpace(i, j, columnSpan, rowSpan);
 
                     if (findOverlayingElements(element).Any())
                         continue;
@@ -401,7 +458,7 @@ namespace GridStackNET
                     if (element.rightColumn >= parentGrid.ColumnDefinitions.Count)
                         continue;
 
-                    addGridItem(i, j, colSpan, rowSpan, content);
+                    addGridItem(content, i, j, columnSpan, rowSpan);
 
                     return;
                 }
@@ -653,6 +710,11 @@ namespace GridStackNET
             Grid.SetColumnSpan(border, traceBorderColumnSpan);
             Grid.SetRowSpan(border, traceBorderRowSpan);
 
+            Grid.SetColumn(border.Child, traceBorderColumn);
+            Grid.SetRow(border.Child, traceBorderRow);
+            Grid.SetColumnSpan(border.Child, traceBorderColumnSpan);
+            Grid.SetRowSpan(border.Child, traceBorderRowSpan);
+
             clearAdorners();
 
             autoAddRowDefinitions();
@@ -675,7 +737,8 @@ namespace GridStackNET
                 moveOverlaidElementsDown(overlayingElement.element, newRow, originalElement);
         }
 
-        public void moveOverlaidElementsDown(UIElement overlayElementInput, int newRow, params UIElement[] dontMoveElements)
+        public void moveOverlaidElementsDown(UIElement overlayElementInput, int newRow,
+            params UIElement[] dontMoveElements)
         {
             // Sets the new row of the overlayElementInput
             Grid.SetRow(overlayElementInput, newRow);

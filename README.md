@@ -27,11 +27,18 @@
 * **ItemMargin**: The margin between the grid border and the element placed in it.
 * **DefaultColumnSpan**: When adding a new item, this will be how many columns it spans.
 * **DefaultRowSpan**: When adding a new item, this will be how many rows it spans.
+* **AutoAssignGridSpace**: When adding a new item to the grid stack, it will use the default column and row span dependency properties. Should be set to "False" if any grid stack layouts will be saved and re-rendered.
 * **Children**: The children elements inside the gridstack. Each child must be of type **System.Windows.UIElement** and the Children object itself must be **ObservableCollection\<UIElement\>**. This property can also be binded to a view model object.
 
 This code has an MIT license.
 
 # Changelog
+
+## Version 0.0.0.3
+
+- Add "AutoAssignGridSpace" dependency property with avoids defaulting any elements to the DefaultColumnSpan and DefaultRowSpan dependency properties.
+- Allows users to custom-define grid-sizes of the UI elements to add by setting the attached Grid properties to the UI elements.
+- Bug Fix: Re-sizing windows doesn't re-size elements in grid stack.
 
 ## Version 0.0.0.2
 
