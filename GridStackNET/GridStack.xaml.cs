@@ -385,6 +385,11 @@ namespace GridStackNET
             Grid.SetColumnSpan(borderToAdd, colSpan);
             Grid.SetRowSpan(borderToAdd, rowSpan);
 
+            Grid.SetColumn(borderToAdd.Child, column);
+            Grid.SetRow(borderToAdd.Child, row);
+            Grid.SetColumnSpan(borderToAdd.Child, colSpan);
+            Grid.SetRowSpan(borderToAdd.Child, rowSpan);
+
             parentGrid.Children.Add(borderToAdd);
 
             autoAddRowDefinitions();

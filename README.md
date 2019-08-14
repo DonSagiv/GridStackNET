@@ -34,6 +34,10 @@ This code has an MIT license.
 
 # Changelog
 
+## Version 0.0.0.5
+
+- Bug Fix: Grid border's child grid settings not updated when added to grid stack.
+
 ## Version 0.0.0.4
 
 - Bug Fix: infinite loop, errors when adding grid items that have a larger column span than the number of columns.
